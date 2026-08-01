@@ -1486,6 +1486,9 @@ const metricsCommand: Command = {
           total?: number;
           successful?: number;
           failed?: number;
+          unknown?: number;
+          described?: number;
+          descriptionCoverage?: number;
           avgConfidence?: number;
         };
         routing?: {
@@ -1495,6 +1498,8 @@ const metricsCommand: Command = {
         };
         agents?: {
           routingAccuracy?: number;
+          averageConfidence?: number;
+          outcomeSuccessRate?: number;
           totalRoutes?: number;
           topAgent?: string;
         };
@@ -1524,9 +1529,25 @@ const metricsCommand: Command = {
       const totalPatterns = safeNum(rawMetrics.patterns?.total ?? rawMetrics.summary?.patternsLearned);
       const successfulPatterns = safeNum(rawMetrics.patterns?.successful ?? Math.round(safeNum(rawMetrics.summary?.successRate) * totalPatterns));
       const failedPatterns = Math.max(0, safeNum(rawMetrics.patterns?.failed ?? totalPatterns - successfulPatterns));
+      const unknownPatterns = Math.max(0, safeNum(rawMetrics.patterns?.unknown));
+      const describedPatterns = Math.max(0, safeNum(rawMetrics.patterns?.described));
+      const descriptionCoverage = safeNum(
+        rawMetrics.patterns?.descriptionCoverage ??
+        (totalPatterns > 0 ? describedPatterns / totalPatterns : 0),
+      );
       const avgConfidence = safeNum(rawMetrics.patterns?.avgConfidence ?? rawMetrics.summary?.avgQuality);
 
-      const routingAccuracy = safeNum(rawMetrics.agents?.routingAccuracy ?? rawMetrics.routing?.avgConfidence);
+      const routingAccuracy = rawMetrics.agents?.routingAccuracy == null
+        ? null
+        : safeNum(rawMetrics.agents.routingAccuracy);
+      const averageRoutingConfidence = safeNum(
+        rawMetrics.agents?.averageConfidence ??
+        rawMetrics.routing?.avgConfidence ??
+        rawMetrics.patterns?.avgConfidence,
+      );
+      const routingOutcomeSuccessRate = rawMetrics.agents?.outcomeSuccessRate == null
+        ? null
+        : safeNum(rawMetrics.agents.outcomeSuccessRate);
       const totalRoutes = safeNum(rawMetrics.agents?.totalRoutes ?? rawMetrics.routing?.totalRoutes);
       const topAgent = rawMetrics.agents?.topAgent ?? rawMetrics.routing?.topAgents?.[0]?.agent ?? 'n/a';
 
@@ -1536,8 +1557,22 @@ const metricsCommand: Command = {
 
       const result = {
         ...rawMetrics,
-        patterns: { total: totalPatterns, successful: successfulPatterns, failed: failedPatterns, avgConfidence },
-        agents: { routingAccuracy, totalRoutes, topAgent },
+        patterns: {
+          total: totalPatterns,
+          successful: successfulPatterns,
+          failed: failedPatterns,
+          unknown: unknownPatterns,
+          described: describedPatterns,
+          descriptionCoverage,
+          avgConfidence,
+        },
+        agents: {
+          routingAccuracy,
+          averageConfidence: averageRoutingConfidence,
+          outcomeSuccessRate: routingOutcomeSuccessRate,
+          totalRoutes,
+          topAgent,
+        },
         commands: { totalExecuted: totalCommands, successRate: commandSuccessRate, avgRiskScore },
       };
 
@@ -1557,6 +1592,8 @@ const metricsCommand: Command = {
           { metric: 'Total Patterns', value: totalPatterns },
           { metric: 'Successful', value: output.success(String(successfulPatterns)) },
           { metric: 'Failed', value: output.error(String(failedPatterns)) },
+          ...(unknownPatterns > 0 ? [{ metric: 'Unclassified', value: String(unknownPatterns) }] : []),
+          { metric: 'With Task Context', value: `${(descriptionCoverage * 100).toFixed(1)}%` },
           { metric: 'Avg Confidence', value: `${(avgConfidence * 100).toFixed(1)}%` }
         ]
       });
@@ -1571,7 +1608,14 @@ const metricsCommand: Command = {
           { key: 'value', header: 'Value', width: 20, align: 'right' }
         ],
         data: [
-          { metric: 'Routing Accuracy', value: `${(routingAccuracy * 100).toFixed(1)}%` },
+          {
+            metric: routingAccuracy === null ? 'Avg Confidence' : 'Routing Accuracy',
+            value: `${((routingAccuracy ?? averageRoutingConfidence) * 100).toFixed(1)}%`,
+          },
+          ...(routingOutcomeSuccessRate === null ? [] : [{
+            metric: 'Outcome Success Rate',
+            value: `${(routingOutcomeSuccessRate * 100).toFixed(1)}%`,
+          }]),
           { metric: 'Total Routes', value: totalRoutes },
           { metric: 'Top Agent', value: output.highlight(topAgent) }
         ]
@@ -1669,19 +1713,21 @@ const transferFromProjectCommand: Command = {
 
       // Call MCP tool for transfer
       const result = await callMCPTool<{
+        success: boolean;
+        message?: string;
         sourcePath: string;
         transferred: {
           total: number;
           byType: Record<string, number>;
-        };
-        skipped: {
+        } | number;
+        skipped?: {
           lowConfidence: number;
           duplicates: number;
           conflicts: number;
         };
-        stats: {
-          avgConfidence: number;
-          avgAge: string;
+        stats?: {
+          avgConfidence: number | null;
+          avgAgeDays: number | null;
         };
       }>('hooks_transfer', {
         sourcePath,
@@ -1689,6 +1735,17 @@ const transferFromProjectCommand: Command = {
         minConfidence,
         mergeStrategy: 'keep-highest-confidence',
       });
+
+      // #2859 — the handler reports success:false (no destination write
+      // happened) when the source has no matching patterns at all. Surface
+      // that honestly instead of claiming a transfer occurred.
+      if (!result.success || typeof result.transferred === 'number') {
+        spinner.fail(result.message ?? 'No patterns transferred');
+        if (ctx.flags.format === 'json') {
+          output.printJson(result);
+        }
+        return { success: false, exitCode: 1, data: result };
+      }
 
       spinner.succeed(`Transferred ${result.transferred.total} patterns`);
 
@@ -1706,9 +1763,9 @@ const transferFromProjectCommand: Command = {
         ],
         data: [
           { category: 'Total Transferred', count: output.success(String(result.transferred.total)) },
-          { category: 'Skipped (Low Confidence)', count: result.skipped.lowConfidence },
-          { category: 'Skipped (Duplicates)', count: result.skipped.duplicates },
-          { category: 'Skipped (Conflicts)', count: result.skipped.conflicts }
+          { category: 'Skipped (Low Confidence)', count: result.skipped?.lowConfidence ?? 0 },
+          { category: 'Skipped (Duplicates)', count: result.skipped?.duplicates ?? 0 },
+          { category: 'Skipped (Conflicts)', count: result.skipped?.conflicts ?? 0 }
         ]
       });
 
@@ -1724,11 +1781,19 @@ const transferFromProjectCommand: Command = {
         });
       }
 
-      output.writeln();
-      output.printList([
-        `Avg Confidence: ${(result.stats.avgConfidence * 100).toFixed(1)}%`,
-        `Avg Age: ${result.stats.avgAge}`
-      ]);
+      // #2865-style honesty: omit stats that have no real measured value
+      // rather than showing a fabricated number.
+      const statLines: string[] = [];
+      if (result.stats?.avgConfidence != null) {
+        statLines.push(`Avg Confidence: ${(result.stats.avgConfidence * 100).toFixed(1)}%`);
+      }
+      if (result.stats?.avgAgeDays != null) {
+        statLines.push(`Avg Age: ${result.stats.avgAgeDays.toFixed(1)} days`);
+      }
+      if (statLines.length > 0) {
+        output.writeln();
+        output.printList(statLines);
+      }
 
       return { success: true, data: result };
     } catch (error) {
@@ -2057,6 +2122,26 @@ const postTaskCommand: Command = {
       type: 'string'
     },
     {
+      name: 'agent-role',
+      description: 'Stable agent role used for role-aware pheromone comparison (for example coder, tester, coordinator)',
+      type: 'string'
+    },
+    {
+      name: 'duration',
+      description: 'Observed task duration in milliseconds for latency fitness',
+      type: 'number'
+    },
+    {
+      name: 'latency-budget-ms',
+      description: 'Expected task duration in milliseconds; paired with --duration to normalize latency fitness',
+      type: 'number'
+    },
+    {
+      name: 'consensus-alignment',
+      description: 'Consensus alignment score from 0 to 1',
+      type: 'number'
+    },
+    {
       name: 'task',
       short: 't',
       description: 'Task description text (used for routing-outcome persistence and keyword extraction so hooks_metrics can surface Pattern Learning / Agent Routing counts). Without this + --agent, no routing outcome is recorded (#2785).',
@@ -2111,6 +2196,10 @@ const postTaskCommand: Command = {
         success,
         quality: ctx.flags.quality,
         agent: ctx.flags.agent,
+        agentRole: ctx.flags.agentRole,
+        duration: ctx.flags.duration,
+        latencyBudgetMs: ctx.flags.latencyBudgetMs,
+        consensusAlignment: ctx.flags.consensusAlignment,
         // #2785: forward the task description so routing outcomes actually persist
         // (hooks_post-task requires taskText + agent to write the outcome row that
         // hooks_metrics reads via getIntelligenceStatsFromMemory)
@@ -2517,9 +2606,17 @@ const intelligenceCommand: Command = {
           moe: {
             enabled: enableMoe,
             status: String(mcpMoe?.status ?? (hasLocalData ? 'active' : 'idle')),
-            expertsActive: Number(mcpMoe?.expertsActive ?? (hasLocalData ? 8 : 0)),
-            routingAccuracy: Number(mcpMoe?.routingAccuracy ?? (hasLocalData ? 0.82 : 0)),
-            loadBalance: Number(mcpMoe?.loadBalance ?? (hasLocalData ? 0.9 : 0)),
+            // #2865 — these three previously fell back to hardcoded
+            // hasLocalData ? <constant> : 0 whenever the MCP tool didn't
+            // report a real value, so "Routing Accuracy: 82.0%" displayed
+            // on every project with local neural data regardless of actual
+            // routing quality (measured 49% on a real store). None of these
+            // three has a cheap, honest local substitute the way
+            // `hooks metrics`' routingAccuracy falls back to averageConfidence,
+            // so they are null (unmeasured) rather than a fabricated number.
+            expertsActive: mcpMoe?.expertsActive == null ? null : Number(mcpMoe.expertsActive),
+            routingAccuracy: mcpMoe?.routingAccuracy == null ? null : Number(mcpMoe.routingAccuracy),
+            loadBalance: mcpMoe?.loadBalance == null ? null : Number(mcpMoe.loadBalance),
           },
           hnsw: {
             enabled: enableHnsw,
@@ -2621,9 +2718,11 @@ const intelligenceCommand: Command = {
           ],
           data: [
             { metric: 'Status', value: formatIntelligenceStatus(moe.status) },
-            { metric: 'Active Experts', value: moe.expertsActive ?? 0 },
-            { metric: 'Routing Accuracy', value: `${((moe.routingAccuracy ?? 0) * 100).toFixed(1)}%` },
-            { metric: 'Load Balance', value: `${((moe.loadBalance ?? 0) * 100).toFixed(1)}%` }
+            // #2865 — omit rather than show a fabricated 0/0.0% when the
+            // MCP tool hasn't reported a real value for these.
+            ...(moe.expertsActive == null ? [] : [{ metric: 'Active Experts', value: moe.expertsActive }]),
+            ...(moe.routingAccuracy == null ? [] : [{ metric: 'Routing Accuracy', value: `${(moe.routingAccuracy * 100).toFixed(1)}%` }]),
+            ...(moe.loadBalance == null ? [] : [{ metric: 'Load Balance', value: `${(moe.loadBalance * 100).toFixed(1)}%` }]),
           ]
         });
       } else {

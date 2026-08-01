@@ -117,15 +117,33 @@ importers:
       '@claude-flow/cli-core':
         specifier: 3.7.0-alpha.5
         version: link:../cli-core
+      '@claude-flow/codex':
+        specifier: 3.0.3
+        version: link:../codex
       '@claude-flow/mcp':
         specifier: 3.0.0-alpha.8
         version: 3.0.0-alpha.8
       '@claude-flow/neural':
         specifier: 3.0.0-alpha.9
         version: link:../neural
+      '@claude-flow/plugin-agent-federation':
+        specifier: 1.0.0-alpha.18
+        version: link:../plugin-agent-federation
+      '@claude-flow/security':
+        specifier: 3.0.0-alpha.14
+        version: link:../security
       '@claude-flow/shared':
         specifier: 3.0.0-alpha.7
         version: 3.0.0-alpha.7
+      '@iarna/toml':
+        specifier: ^2.2.5
+        version: 2.2.5
+      '@metaharness/darwin':
+        specifier: ^0.8.0
+        version: 0.8.0
+      '@metaharness/flywheel':
+        specifier: ^0.1.7
+        version: 0.1.7
       '@metaharness/router':
         specifier: ^0.3.2
         version: 0.3.2
@@ -135,6 +153,21 @@ importers:
       '@ruvector/rabitq-wasm':
         specifier: 0.1.0
         version: 0.1.0
+      bcryptjs:
+        specifier: ^3.0.3
+        version: 3.0.3
+      chalk:
+        specifier: ^5.3.0
+        version: 5.6.2
+      commander:
+        specifier: ^12.0.0
+        version: 12.1.0
+      fs-extra:
+        specifier: ^11.2.0
+        version: 11.3.3
+      inquirer:
+        specifier: ^9.2.0
+        version: 9.3.8(@types/node@20.19.27)
       metaharness:
         specifier: ^0.4.1
         version: 0.4.1
@@ -144,19 +177,28 @@ importers:
       sql.js:
         specifier: ^1.13.0
         version: 1.14.1
+      toml:
+        specifier: ^3.0.0
+        version: 3.0.0
+      ws:
+        specifier: ^8.21.0
+        version: 8.21.1
       yaml:
         specifier: ^2.8.0
         version: 2.8.2
+      zod:
+        specifier: ^3.22.0
+        version: 3.25.76
     optionalDependencies:
+      '@agntcy/slim-bindings':
+        specifier: 2.0.0-alpha.5
+        version: 2.0.0-alpha.5
       '@claude-flow/memory':
         specifier: ^3.0.0-alpha.21
         version: link:../memory
-      '@claude-flow/security':
-        specifier: ^3.0.0-alpha.12
-        version: link:../security
-      '@metaharness/darwin':
-        specifier: ^0.8.0
-        version: 0.8.0
+      '@napi-rs/keyring':
+        specifier: 1.3.0
+        version: 1.3.0
       agentdb:
         specifier: ^3.0.0-alpha.17
         version: 3.0.0-alpha.17(@types/node@20.19.27)(zod@3.25.76)
@@ -367,6 +409,9 @@ importers:
 
   '@claude-flow/memory':
     dependencies:
+      '@claude-flow/security':
+        specifier: ^3.0.0-alpha.12
+        version: link:../security
       agentdb:
         specifier: ^3.0.0-alpha.17
         version: 3.0.0-alpha.17(@types/node@20.19.27)(zod@3.25.76)
@@ -427,10 +472,10 @@ importers:
         version: 8.20.0
     devDependencies:
       '@claude-flow/security':
-        specifier: workspace:*
-        version: link:../security
+        specifier: file:../security
+        version: file:@claude-flow/security
       '@claude-flow/shared':
-        specifier: workspace:*
+        specifier: 3.0.0-alpha.8
         version: link:../shared
       '@types/ws':
         specifier: ^8.18.1
@@ -623,6 +668,83 @@ packages:
   /@actions/io@2.0.0:
     resolution: {integrity: sha512-Jv33IN09XLO+0HS79aaODsvIRyduiF7NY/F6LYeK5oeUmrsz7aFdRphQjFoESF4jS7lMauDOttKALcpapVDIAg==}
 
+  /@agntcy/slim-bindings-darwin-arm64@2.0.0-alpha.5:
+    resolution: {integrity: sha512-M5DP+SPVn+ReAAK6GxHosxciNMCWZv1vxZziPcxWMt+HIOt4/9w7vlbJPe1dfmdEHegE9iNGQ+AOSKOfQS5rhQ==}
+    engines: {node: '>=18.0.0'}
+    requiresBuild: true
+    dependencies:
+      '@ubjs/core': 0.31.0-3
+      '@ubjs/node': 0.31.0-3
+    dev: false
+    optional: true
+
+  /@agntcy/slim-bindings-darwin-x64@2.0.0-alpha.5:
+    resolution: {integrity: sha512-xWbywk8ZNABApjKiUe8E6umkGXYTNQBKAO1ZFPQfOP1OrSf3oupJTv/pkzsRifh+/dOFaojpZFvcZJfeM1L/jA==}
+    engines: {node: '>=18.0.0'}
+    requiresBuild: true
+    dependencies:
+      '@ubjs/core': 0.31.0-3
+      '@ubjs/node': 0.31.0-3
+    dev: false
+    optional: true
+
+  /@agntcy/slim-bindings-linux-arm64-gnu@2.0.0-alpha.5:
+    resolution: {integrity: sha512-+3YZRrVNYpY4eD4Wn9aza6rsiGwB/hz/ojxyCPgeK9/4QFYVvUMnVq4H4sN+k5ckJP7lrR6ncfEqp7BJyOwKQA==}
+    engines: {node: '>=18.0.0'}
+    requiresBuild: true
+    dependencies:
+      '@ubjs/core': 0.31.0-3
+      '@ubjs/node': 0.31.0-3
+    dev: false
+    optional: true
+
+  /@agntcy/slim-bindings-linux-x64-gnu@2.0.0-alpha.5:
+    resolution: {integrity: sha512-BYGtMWtJJTd+z6eioFvbGbg/oq0DwjhHRJtTYvNpHQ6CFhja3PhuxcUPrW53xKVLTD3saeZq8MVOGq2tuF+PRQ==}
+    engines: {node: '>=18.0.0'}
+    requiresBuild: true
+    dependencies:
+      '@ubjs/core': 0.31.0-3
+      '@ubjs/node': 0.31.0-3
+    dev: false
+    optional: true
+
+  /@agntcy/slim-bindings-win32-arm64-msvc@2.0.0-alpha.5:
+    resolution: {integrity: sha512-dO6/JdvE2ANVujXMTSxSMqb94YN9+ox7HbNaSzQt8shERB/5XFgWKYDCrwEJC26ux8FzQcvaq8mnlePGueDq7g==}
+    engines: {node: '>=18.0.0'}
+    requiresBuild: true
+    dependencies:
+      '@ubjs/core': 0.31.0-3
+      '@ubjs/node': 0.31.0-3
+    dev: false
+    optional: true
+
+  /@agntcy/slim-bindings-win32-x64-msvc@2.0.0-alpha.5:
+    resolution: {integrity: sha512-w0mKFPKKkhwfQzaC/p1Ke3ogNL4AyxC9jt0LY0LsBHNIJaPPBvAbLMLVslZBgn2ghrMRS/nxdacdQrAcFQQzXg==}
+    engines: {node: '>=18.0.0'}
+    requiresBuild: true
+    dependencies:
+      '@ubjs/core': 0.31.0-3
+      '@ubjs/node': 0.31.0-3
+    dev: false
+    optional: true
+
+  /@agntcy/slim-bindings@2.0.0-alpha.5:
+    resolution: {integrity: sha512-QBpln5ubYbJ7nMY2SUWJJfUsl5qmezqWNwcatdjuaZaK2dDIj2RHAvgNKNmuf8Exg+kuI/88SFrAZMNxLJolNQ==}
+    engines: {node: '>=18.0.0'}
+    requiresBuild: true
+    dependencies:
+      '@ubjs/core': 0.31.0-3
+      '@ubjs/node': 0.31.0-3
+    optionalDependencies:
+      '@agntcy/slim-bindings-darwin-arm64': 2.0.0-alpha.5
+      '@agntcy/slim-bindings-darwin-x64': 2.0.0-alpha.5
+      '@agntcy/slim-bindings-linux-arm64-gnu': 2.0.0-alpha.5
+      '@agntcy/slim-bindings-linux-x64-gnu': 2.0.0-alpha.5
+      '@agntcy/slim-bindings-win32-arm64-msvc': 2.0.0-alpha.5
+      '@agntcy/slim-bindings-win32-x64-msvc': 2.0.0-alpha.5
+    dev: false
+    optional: true
+
   /@ai-sdk/google@3.0.43(zod@3.25.76):
     resolution: {integrity: sha512-NGCgP5g8HBxrNdxvF8Dhww+UKfqAkZAmyYBvbu9YLoBkzAmGKDBGhVptN/oXPB5Vm0jggMdoLycZ8JReQM8Zqg==}
     engines: {node: '>=18'}
@@ -761,7 +883,7 @@ packages:
       cors: 2.8.6
       express: 5.2.1
       helmet: 7.2.0
-      ws: 8.20.0
+      ws: 8.21.1
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -1076,7 +1198,7 @@ packages:
         optional: true
     dependencies:
       google-auth-library: 10.5.0
-      ws: 8.20.0
+      ws: 8.21.1
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -1097,7 +1219,7 @@ packages:
       google-auth-library: 10.5.0
       p-retry: 4.6.2
       protobufjs: 8.6.5
-      ws: 8.20.0
+      ws: 8.21.1
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -1636,7 +1758,6 @@ packages:
     hasBin: true
     requiresBuild: true
     dev: false
-    optional: true
 
   /@metaharness/flywheel@0.1.7:
     resolution: {integrity: sha512-am7dROkjyS1Zkms3TOcn2LVHjwMLQXPJ6Pu1aP55q40vWJLRONGdGvnrcBL/VhMFqjQrVB57lmSn2E+s5CSZwA==}
@@ -1761,7 +1882,6 @@ packages:
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@napi-rs/keyring-darwin-x64@1.3.0:
@@ -1770,7 +1890,6 @@ packages:
     cpu: [x64]
     os: [darwin]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@napi-rs/keyring-freebsd-x64@1.3.0:
@@ -1779,7 +1898,6 @@ packages:
     cpu: [x64]
     os: [freebsd]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@napi-rs/keyring-linux-arm-gnueabihf@1.3.0:
@@ -1788,7 +1906,6 @@ packages:
     cpu: [arm]
     os: [linux]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@napi-rs/keyring-linux-arm64-gnu@1.3.0:
@@ -1797,7 +1914,6 @@ packages:
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@napi-rs/keyring-linux-arm64-musl@1.3.0:
@@ -1806,7 +1922,6 @@ packages:
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@napi-rs/keyring-linux-riscv64-gnu@1.3.0:
@@ -1815,7 +1930,6 @@ packages:
     cpu: [riscv64]
     os: [linux]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@napi-rs/keyring-linux-x64-gnu@1.3.0:
@@ -1824,7 +1938,6 @@ packages:
     cpu: [x64]
     os: [linux]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@napi-rs/keyring-linux-x64-musl@1.3.0:
@@ -1833,7 +1946,6 @@ packages:
     cpu: [x64]
     os: [linux]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@napi-rs/keyring-win32-arm64-msvc@1.3.0:
@@ -1842,7 +1954,6 @@ packages:
     cpu: [arm64]
     os: [win32]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@napi-rs/keyring-win32-ia32-msvc@1.3.0:
@@ -1851,7 +1962,6 @@ packages:
     cpu: [ia32]
     os: [win32]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@napi-rs/keyring-win32-x64-msvc@1.3.0:
@@ -1860,7 +1970,6 @@ packages:
     cpu: [x64]
     os: [win32]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@napi-rs/keyring@1.3.0:
@@ -1880,12 +1989,10 @@ packages:
       '@napi-rs/keyring-win32-arm64-msvc': 1.3.0
       '@napi-rs/keyring-win32-ia32-msvc': 1.3.0
       '@napi-rs/keyring-win32-x64-msvc': 1.3.0
-    dev: false
     optional: true
 
   /@noble/ed25519@2.3.0:
     resolution: {integrity: sha512-M7dvXL2B92/M7dw9+gzuydL8qn/jiqNHaoR3Q+cb1q1GHV7uwE17WCyFMG+Y+TZb5izcaXk5TdJRrDUxHXL78A==}
-    dev: false
 
   /@noble/hashes@1.8.0:
     resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
@@ -6087,7 +6194,7 @@ packages:
       '@types/phoenix': 1.6.7
       '@types/ws': 8.18.1
       tslib: 2.8.1
-      ws: 8.20.0
+      ws: 8.21.1
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -6553,6 +6660,91 @@ packages:
     dependencies:
       '@types/node': 20.19.27
 
+  /@ubjs/core@0.31.0-3:
+    resolution: {integrity: sha512-39XrJgUZ2VVb561sSnkXPhczNoeBsNiSRArecsV0JE7CJq69ajFkcn9/tBAUS2NpgHkLIDU+z6Ks2+1wXnboxg==}
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@ubjs/node-darwin-arm64@0.31.0-3:
+    resolution: {integrity: sha512-GGQVPLkVo4Gc8qVLW4IGvS8bjl8eHXyeP4a97ntGmsAdXwE5gsS29o8xUEFROjhwHKD+9sgVeblCSWVG3CpHsw==}
+    cpu: [arm64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@ubjs/node-darwin-x64@0.31.0-3:
+    resolution: {integrity: sha512-2sc47u4XFYOsbmP5EW+Gx8m/yGrYnfFDFQm6+kz7goSWTNg84eEiz3COs9HKJDVuNJ5Khv5XipTO8CFadMLXCw==}
+    cpu: [x64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@ubjs/node-linux-arm64-gnu@0.31.0-3:
+    resolution: {integrity: sha512-YStVXhYz/5jvlWf/p4fhiVT72unYAbGugifFC9QmO/+hnroQDAQ5t8SARbsc15G4olMcamdIB+GETiUB7gmaYg==}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@ubjs/node-linux-arm64-musl@0.31.0-3:
+    resolution: {integrity: sha512-Izp4nvfy/LmibzFowAztkoDOksCR2fb2zl6fh1ojR1HEsg0rAGruxtI8d3fn8DI0lBXwqmn6SF///oD4mFNJPQ==}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@ubjs/node-linux-x64-gnu@0.31.0-3:
+    resolution: {integrity: sha512-Xdm21blyg5U/kW6s7OMvgrr8coGTkUlt26DVR9x8gKISif+E3YwdEskbFScWqystAiJnfjw7xHEc8UMu0Qlz7Q==}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@ubjs/node-linux-x64-musl@0.31.0-3:
+    resolution: {integrity: sha512-fFQ9BWS6i2LUH9SJgD9oEiKXXo/say59vHy7usFe1t7C2xvwvP34f5SuxXmWP9R8fHyA0aC4kIZ+TTwyHSv1Kw==}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@ubjs/node-win32-arm64-msvc@0.31.0-3:
+    resolution: {integrity: sha512-ID6rSz1NmPsWTNBBNAw4OnJ5Dj8pcbtNJtdPB3OxcGigLBd/e0x7buhSI7os6Mo5iYtEdCynBRQHFJwub5XSPg==}
+    cpu: [arm64]
+    os: [win32]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@ubjs/node-win32-x64-msvc@0.31.0-3:
+    resolution: {integrity: sha512-wevs+Y+szwcCUT8IJFbB4/1nfxyRv/51l8oG7FGUPWD1xLPyuHfJBG27C+PDeC7KRzes/2n6aLo4DGZbr/LYTw==}
+    cpu: [x64]
+    os: [win32]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@ubjs/node@0.31.0-3:
+    resolution: {integrity: sha512-qNMpi2LICNwxGXZyRF8fSDBSpbezyZbEsydrbiMPJOmtOWr4tmZIEl7jkWGHVGShoBvHfFo4eHp5B4UVP928Cg==}
+    requiresBuild: true
+    optionalDependencies:
+      '@ubjs/node-darwin-arm64': 0.31.0-3
+      '@ubjs/node-darwin-x64': 0.31.0-3
+      '@ubjs/node-linux-arm64-gnu': 0.31.0-3
+      '@ubjs/node-linux-arm64-musl': 0.31.0-3
+      '@ubjs/node-linux-x64-gnu': 0.31.0-3
+      '@ubjs/node-linux-x64-musl': 0.31.0-3
+      '@ubjs/node-win32-arm64-msvc': 0.31.0-3
+      '@ubjs/node-win32-x64-msvc': 0.31.0-3
+    dev: false
+    optional: true
+
   /@ungap/structured-clone@1.3.0:
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
     dev: true
@@ -6976,7 +7168,7 @@ packages:
       http-proxy-middleware: 3.0.5
       tiktoken: 1.0.22
       ulid: 3.0.2
-      ws: 8.20.0
+      ws: 8.21.1
       yaml: 2.9.0
       zod: 3.25.76
     transitivePeerDependencies:
@@ -7041,7 +7233,7 @@ packages:
       tiktoken: 1.0.22
       ulid: 3.0.2
       vite: 7.3.0(@types/node@20.19.27)(yaml@2.8.2)
-      ws: 8.20.0
+      ws: 8.21.1
       yaml: 2.8.2
       zod: 3.25.76
     transitivePeerDependencies:
@@ -7102,7 +7294,7 @@ packages:
       ruvector-onnx-embeddings-wasm: 0.1.2
       tiktoken: 1.0.22
       ulid: 3.0.2
-      ws: 8.20.0
+      ws: 8.21.1
       yaml: 2.8.2
       zod: 3.25.76
     optionalDependencies:
@@ -7215,7 +7407,7 @@ packages:
       ruvector-onnx-embeddings-wasm: 0.1.2
       tiktoken: 1.0.22
       ulid: 3.0.2
-      ws: 8.20.0
+      ws: 8.21.1
       yaml: 2.8.2
       zod: 3.25.76
     optionalDependencies:
@@ -7271,7 +7463,7 @@ packages:
       tiktoken: 1.0.22
       ulid: 3.0.2
       validator: 13.15.26
-      ws: 8.20.0
+      ws: 8.21.1
       yaml: 2.8.2
       zod: 3.25.76
     transitivePeerDependencies:
@@ -7634,7 +7826,6 @@ packages:
   /bcryptjs@3.0.3:
     resolution: {integrity: sha512-GlF5wPWnSa/X5LKM1o0wz0suXIINz1iHRLvTS+sLyi7XPbe5ycmYI3DlZqVGZZtDgl4DmasFg7gOB3JYbphV5g==}
     hasBin: true
-    dev: false
 
   /before-after-hook@3.0.2:
     resolution: {integrity: sha512-Nik3Sc0ncrMK4UUdXQmAnRtzmNQTAAXmXIopizwZ1W1t8QmfJj+zL4OA2I7XPTPW5z5TDqv4hRo/JzouDJnX3A==}
@@ -10829,7 +11020,7 @@ packages:
       log-symbols: 5.1.0
       stdin-discarder: 0.1.0
       string-width: 6.1.0
-      strip-ansi: 7.1.2
+      strip-ansi: 7.2.0
     dev: false
 
   /ora@9.0.0:
@@ -12218,13 +12409,6 @@ packages:
     dependencies:
       ansi-regex: 5.0.1
 
-  /strip-ansi@7.1.2:
-    resolution: {integrity: sha512-gmBGslpoQJtgnMAvOVqGZpEz9dyoKTCzy2nfz/n8aIFhN/jCE/rCmcxabB6jOOHV+0WNnylOxaxBQPSvcWklhA==}
-    engines: {node: '>=12'}
-    dependencies:
-      ansi-regex: 6.2.2
-    dev: false
-
   /strip-ansi@7.2.0:
     resolution: {integrity: sha512-yDPMNjp4WyfYBkHnjIRLfca1i6KMyGCtsVgoKe/z1+6vukgaENdgGBZt+ZmKPc4gavvEZ5OgHfHdrazhgNyG7w==}
     engines: {node: '>=12'}
@@ -13151,6 +13335,19 @@ packages:
         optional: true
       utf-8-validate:
         optional: true
+    dev: false
+
+  /ws@8.21.1:
+    resolution: {integrity: sha512-+0NTnW77fFN/DjQi6k/Sq/Yvk4Sgajw7urW8V+asjXnRgDs9gyGkdb7EzgfhA4goXsRIZKE28fzIXBHEzhuiWw==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
 
   /xsschema@0.4.0-beta.5(zod-to-json-schema@3.25.1)(zod@4.3.5):
     resolution: {integrity: sha512-73pYwf1hMy++7SnOkghJdgdPaGi+Y5I0SaO6rIlxb1ouV6tEyDbEcXP82kyr32KQVTlUbFj6qewi9eUVEiXm+g==}
@@ -13287,3 +13484,14 @@ packages:
 
   /zod@4.3.5:
     resolution: {integrity: sha512-k7Nwx6vuWx1IJ9Bjuf4Zt1PEllcwe7cls3VNzm4CQ1/hgtFUK2bRNG3rvnpPUhFjmqJKAKtjV576KnUkHocg/g==}
+
+  file:@claude-flow/security:
+    resolution: {directory: '@claude-flow/security', type: directory}
+    name: '@claude-flow/security'
+    dependencies:
+      '@noble/ed25519': 2.3.0
+      bcryptjs: 3.0.3
+      zod: 3.25.76
+    optionalDependencies:
+      '@napi-rs/keyring': 1.3.0
+    dev: true

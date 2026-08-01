@@ -6,6 +6,7 @@
 
 import fs from 'fs-extra';
 import path from 'path';
+import { fileURLToPath } from 'node:url';
 import type {
   CodexInitOptions,
   CodexInitResult,
@@ -13,14 +14,23 @@ import type {
   BuiltInSkill,
 } from './types.js';
 import { generateAgentsMd } from './generators/agents-md.js';
-import { generateSkillMd, generateBuiltInSkill } from './generators/skill-md.js';
+import {
+  BUILT_IN_SKILL_NAMES,
+  generateSkillMd,
+  generateBuiltInSkill,
+} from './generators/skill-md.js';
 import { generateConfigToml } from './generators/config-toml.js';
-import { DEFAULT_SKILLS_BY_TEMPLATE, AGENTS_OVERRIDE_TEMPLATE, GITIGNORE_ENTRIES, ALL_AVAILABLE_SKILLS } from './templates/index.js';
+import { DEFAULT_SKILLS_BY_TEMPLATE, AGENTS_OVERRIDE_TEMPLATE, GITIGNORE_ENTRIES } from './templates/index.js';
+import { getRufloMcpAddCommand } from './mcp-config.js';
 
 /**
  * Bundled skills source directory (relative to package)
  */
-const BUNDLED_SKILLS_DIR = '../../../../.agents/skills';
+const BUNDLED_SKILLS_DIR = '../.agents/skills';
+
+export function resolveBundledSkillsPath(moduleUrl = import.meta.url): string {
+  return path.resolve(path.dirname(fileURLToPath(moduleUrl)), BUNDLED_SKILLS_DIR);
+}
 
 /**
  * Main initializer for Codex projects
@@ -44,10 +54,7 @@ export class CodexInitializer {
     this.dual = options.dual ?? false;
 
     // Resolve bundled skills path (relative to this file's location)
-    this.bundledSkillsPath = path.resolve(
-      path.dirname(new URL(import.meta.url).pathname),
-      BUNDLED_SKILLS_DIR
-    );
+    this.bundledSkillsPath = resolveBundledSkillsPath();
 
     const filesCreated: string[] = [];
     const skillsGenerated: string[] = [];
@@ -72,6 +79,21 @@ export class CodexInitializer {
 
       if (alreadyInitialized && this.force) {
         warnings.push('Overwriting existing configuration files');
+      }
+
+      // Template catalog entries are capability names, not proof that a
+      // complete SKILL.md payload ships in this package. For default template
+      // selections, install only canonical packaged assets. Explicit
+      // `options.skills` remain an intentional custom-skill request and keep
+      // the existing scaffold behavior.
+      if (options.skills === undefined) {
+        const omitted = await this.retainCanonicalPackagedSkills();
+        if (omitted.length > 0) {
+          warnings.push(
+            `Omitted ${omitted.length} catalog skills without canonical packaged assets. ` +
+            'Install additional capabilities from the Ruflo plugin catalog.',
+          );
+        }
       }
 
       // Create directory structure
@@ -272,6 +294,28 @@ export class CodexInitializer {
   }
 
   /**
+   * Keep generated configuration truthful: a template-selected skill is
+   * enabled only when its canonical SKILL.md is present in the package.
+   */
+  private async retainCanonicalPackagedSkills(): Promise<string[]> {
+    const canonical = new Set<string>();
+    try {
+      const entries = await fs.readdir(this.bundledSkillsPath, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        const skillMd = path.join(this.bundledSkillsPath, entry.name, 'SKILL.md');
+        if (await fs.pathExists(skillMd)) canonical.add(entry.name);
+      }
+    } catch {
+      // Missing/unreadable package assets must fail safe to omission.
+    }
+
+    const omitted = this.skills.filter((skillName) => !canonical.has(skillName));
+    this.skills = this.skills.filter((skillName) => canonical.has(skillName));
+    return omitted;
+  }
+
+  /**
    * Copy bundled skills from the package or source directory
    * Returns the list of skills copied
    */
@@ -344,7 +388,7 @@ export class CodexInitializer {
       } catch {
         return {
           registered: false,
-          warning: 'Codex CLI not found. Run: codex mcp add ruflo -- npx -y --package=@claude-flow/cli@latest claude-flow-mcp',
+          warning: `Codex CLI not found. Run: ${getRufloMcpAddCommand()}`,
         };
       }
 
@@ -381,18 +425,11 @@ export class CodexInitializer {
 
       // Register the MCP server.
       //
-      // #2774: MUST target the dedicated stdio server binary
-      // (`claude-flow-mcp`, exported by `@claude-flow/cli`) — NOT the
-      // `ruflo mcp start` management CLI. The management CLI stays alive
-      // but never answers `initialize` on stdio, so Codex silently sees
-      // the server as configured but exposes zero Ruflo tools. The
-      // dedicated binary streams JSON-RPC over stdio directly, with all
-      // progress noise routed to stderr (also fixes the #2253 regression
-      // where an embedder progress line leaks onto stdout before the
-      // handshake).
+      // Use the shared platform-aware Ruflo MCP definition so generators,
+      // migrations, and live registration cannot drift.
       try {
         execSync(
-          'codex mcp add ruflo -- npx -y --package=@claude-flow/cli@latest claude-flow-mcp',
+          getRufloMcpAddCommand(),
           {
             stdio: 'pipe',
             timeout: 10000,
@@ -403,13 +440,13 @@ export class CodexInitializer {
         const errorMessage = err instanceof Error ? err.message : String(err);
         return {
           registered: false,
-          warning: `Failed to register MCP server: ${errorMessage}. Run manually: codex mcp add ruflo -- npx -y --package=@claude-flow/cli@latest claude-flow-mcp`,
+          warning: `Failed to register MCP server: ${errorMessage}. Run manually: ${getRufloMcpAddCommand()}`,
         };
       }
     } catch {
       return {
         registered: false,
-        warning: 'Could not register MCP server. Run manually: codex mcp add ruflo -- npx -y --package=@claude-flow/cli@latest claude-flow-mcp',
+        warning: `Could not register MCP server. Run manually: ${getRufloMcpAddCommand()}`,
       };
     }
   }
@@ -559,18 +596,9 @@ web_search = "live"
     await fs.ensureDir(skillDir);
 
     // Check if it's a built-in skill
-    const builtInSkills: BuiltInSkill[] = [
-      'swarm-orchestration',
-      'memory-management',
-      'sparc-methodology',
-      'security-audit',
-      'performance-analysis',
-      'github-automation',
-    ];
-
     let skillMd: string;
 
-    if (builtInSkills.includes(skillName as BuiltInSkill)) {
+    if (BUILT_IN_SKILL_NAMES.includes(skillName as BuiltInSkill)) {
       const result = await generateBuiltInSkill(skillName);
       skillMd = result.skillMd;
 
@@ -579,15 +607,19 @@ web_search = "live"
         const scriptsDir = path.join(skillDir, 'scripts');
         await fs.ensureDir(scriptsDir);
         for (const [scriptName, scriptContent] of Object.entries(result.scripts)) {
-          await fs.writeFile(path.join(scriptsDir, scriptName), scriptContent, 'utf-8');
+          const scriptPath = path.join(scriptsDir, scriptName);
+          await fs.ensureDir(path.dirname(scriptPath));
+          await fs.writeFile(scriptPath, scriptContent, 'utf-8');
         }
       }
 
       if (Object.keys(result.references).length > 0) {
-        const refsDir = path.join(skillDir, 'docs');
+        const refsDir = path.join(skillDir, 'references');
         await fs.ensureDir(refsDir);
         for (const [refName, refContent] of Object.entries(result.references)) {
-          await fs.writeFile(path.join(refsDir, refName), refContent, 'utf-8');
+          const referencePath = path.join(refsDir, refName);
+          await fs.ensureDir(path.dirname(referencePath));
+          await fs.writeFile(referencePath, refContent, 'utf-8');
         }
       }
     } else {
@@ -616,14 +648,18 @@ web_search = "live"
       content = await fs.readFile(gitignorePath, 'utf-8');
     }
 
-    // Check if Codex entries already exist
-    if (content.includes('.codex/')) {
-      return false; // Already has entries
-    }
+    const existingLines = new Set(content.split(/\r?\n/));
+    const missing = GITIGNORE_ENTRIES.filter(
+      (entry) => entry.length > 0 && !existingLines.has(entry),
+    );
+    if (missing.length === 0) return false;
 
-    // Add entries with proper spacing
-    const separator = content.length > 0 && !content.endsWith('\n') ? '\n\n' : '\n';
-    const newContent = content + separator + GITIGNORE_ENTRIES.join('\n') + '\n';
+    // Add only missing entries so a preceding Claude-native init does not
+    // duplicate shared .env and runtime rules.
+    const separator = content.length === 0
+      ? ''
+      : content.endsWith('\n') ? '\n' : '\n\n';
+    const newContent = content + separator + missing.join('\n') + '\n';
     await fs.writeFile(gitignorePath, newContent, 'utf-8');
     return true;
   }
@@ -706,6 +742,9 @@ Skills are invoked using \`$skill-name\` syntax. Each skill has:
 ## Instructions
 
 **Primary instructions are in \`AGENTS.md\`** (Agentic AI Foundation standard).
+Read and follow that file before starting work; it contains the live
+\`guidance_brain\` routing workflow, concurrency ownership rules, and authority
+boundaries.
 
 This file provides compatibility for Claude Code users.
 
@@ -743,7 +782,7 @@ ${this.skills.map(s => `- \`$${s}\` (Codex) / \`/${s}\` (Claude Code)`).join('\n
 \`\`\`bash
 # Start Ruflo's MCP server over stdio (dedicated entry point — the
 # management \`ruflo mcp start\` CLI does NOT answer JSON-RPC on stdio).
-npx -y --package=@claude-flow/cli@latest claude-flow-mcp
+npx -y ruflo@latest mcp start
 \`\`\`
 
 ## Swarm Orchestration
